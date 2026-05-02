@@ -414,8 +414,8 @@
     <div class="logo">
       <span class="logo-icon">🏄</span>
       <div>
-        <h1>Costa Rica Surf Report</h1>
-        <div class="tagline">Live conditions · Custom swell analysis · Open-Meteo data</div>
+        <h1>Surf Report</h1>
+        <div class="tagline">Costa Rica + world reference spots · Live swell analysis</div>
       </div>
     </div>
     <div class="header-right">
@@ -429,22 +429,24 @@
 <main>
   <div class="region-tabs" id="region-tabs">
     <div class="tab active" data-region="all">All Spots</div>
-    <div class="tab" data-region="pacific-north">Pacific North</div>
-    <div class="tab" data-region="pacific-central">Pacific Central</div>
-    <div class="tab" data-region="pacific-south">Pacific South</div>
-    <div class="tab" data-region="caribbean">Caribbean</div>
-    <div class="tab" data-region="big-wave">🌊 Big Wave Refs</div>
+    <div class="tab" data-region="pacific-north">CR · Pacific N</div>
+    <div class="tab" data-region="pacific-central">CR · Pacific C</div>
+    <div class="tab" data-region="pacific-south">CR · Pacific S</div>
+    <div class="tab" data-region="caribbean">CR · Caribbean</div>
+    <div class="tab" data-region="hawaii">🌺 Hawaii</div>
+    <div class="tab" data-region="world">🌏 World</div>
+    <div class="tab" data-region="big-wave">🌊 Big Wave</div>
   </div>
 
   <div class="view-toggle">
-    <button class="view-btn active" id="btn-cards">⊞ Cards</button>
-    <button class="view-btn" id="btn-map">🗺 Map</button>
+    <button class="view-btn" id="btn-cards">⊞ Cards</button>
+    <button class="view-btn active" id="btn-map">🗺 Map</button>
   </div>
 
-  <div id="map-container">
+  <div id="map-container" class="visible">
     <div id="map"></div>
   </div>
-  <div class="spots-grid" id="spots-grid"></div>
+  <div class="spots-grid" id="spots-grid" style="display:none"></div>
 </main>
 
 <script>
@@ -579,7 +581,7 @@ const SPOTS = [
   {
     id: 'pipeline',
     name: 'Pipeline (North Shore)',
-    region: 'big-wave',
+    region: 'hawaii',
     lat: 21.6648, lon: -158.0536,
     optimalSwellDir: 315, swellTolerance: 45,
     coastFacing: 0,
@@ -587,6 +589,186 @@ const SPOTS = [
     skill: 'Elite / Big Wave',
     bestSeason: 'Nov – Feb',
     note: 'Perfect NW swell detonates on a shallow lava reef. Most documented wave on earth.'
+  },
+  {
+    id: 'sunset-beach',
+    name: 'Sunset Beach (North Shore)',
+    region: 'hawaii',
+    lat: 21.6790, lon: -158.0361,
+    optimalSwellDir: 315, swellTolerance: 50,
+    coastFacing: 350,
+    type: 'Reef Break',
+    skill: 'Advanced',
+    bestSeason: 'Nov – Feb',
+    note: 'Massive thick rights. Big-wave testing ground for North Shore winter.'
+  },
+  {
+    id: 'waimea-bay',
+    name: 'Waimea Bay',
+    region: 'hawaii',
+    lat: 21.6406, lon: -158.0667,
+    optimalSwellDir: 315, swellTolerance: 40,
+    coastFacing: 320,
+    type: 'Big Wave Beach',
+    skill: 'Elite / Big Wave',
+    bestSeason: 'Nov – Feb',
+    note: "The original big-wave spot. Doesn't break until 15ft+. Eddie Aikau Invitational venue."
+  },
+  {
+    id: 'honolua-bay',
+    name: 'Honolua Bay (Maui)',
+    region: 'hawaii',
+    lat: 21.0150, lon: -156.6378,
+    optimalSwellDir: 340, swellTolerance: 50,
+    coastFacing: 350,
+    type: 'Right Point',
+    skill: 'Advanced',
+    bestSeason: 'Nov – Mar',
+    note: 'Perfect right-hand point break. Only fires on NNW–N swells.'
+  },
+  {
+    id: 'trestles',
+    name: 'Lower Trestles',
+    region: 'world',
+    lat: 33.3828, lon: -117.5912,
+    optimalSwellDir: 225, swellTolerance: 65,
+    coastFacing: 225,
+    type: 'Cobble Reef',
+    skill: 'All Levels',
+    bestSeason: 'Apr – Oct',
+    note: 'World tour stop. Perfect peeling rights and lefts on SW swells.'
+  },
+  {
+    id: 'puerto-escondido',
+    name: 'Puerto Escondido',
+    region: 'world',
+    lat: 15.8350, lon: -97.0670,
+    optimalSwellDir: 195, swellTolerance: 65,
+    coastFacing: 200,
+    type: 'Beach Break',
+    skill: 'Advanced',
+    bestSeason: 'May – Sep',
+    note: '"Mexican Pipeline" — heavy hollow barrels with serious power.'
+  },
+  {
+    id: 'bells-beach',
+    name: 'Bells Beach',
+    region: 'world',
+    lat: -38.3678, lon: 144.2820,
+    optimalSwellDir: 225, swellTolerance: 60,
+    coastFacing: 200,
+    type: 'Right Point/Reef',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'Apr – Oct',
+    note: 'Iconic Australian right point. Rip Curl Pro held here since 1961.'
+  },
+  {
+    id: 'snapper-rocks',
+    name: 'Snapper Rocks (Superbank)',
+    region: 'world',
+    lat: -28.1644, lon: 153.5494,
+    optimalSwellDir: 115, swellTolerance: 60,
+    coastFacing: 90,
+    type: 'Sand-Bottom Point',
+    skill: 'All Levels',
+    bestSeason: 'Mar – Jul',
+    note: "World's longest sand-bottom point break. 1km+ rides possible."
+  },
+  {
+    id: 'uluwatu',
+    name: 'Uluwatu',
+    region: 'world',
+    lat: -8.8154, lon: 115.0884,
+    optimalSwellDir: 215, swellTolerance: 60,
+    coastFacing: 225,
+    type: 'Left Reef',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'Apr – Oct',
+    note: "Bali's most iconic. Long peeling lefts beneath limestone cliffs."
+  },
+  {
+    id: 'g-land',
+    name: 'G-Land (Grajagan)',
+    region: 'world',
+    lat: -8.7042, lon: 114.3858,
+    optimalSwellDir: 215, swellTolerance: 50,
+    coastFacing: 215,
+    type: 'Left Reef',
+    skill: 'Advanced',
+    bestSeason: 'Apr – Oct',
+    note: 'Perfect long lefts breaking off a remote Java jungle peninsula.'
+  },
+  {
+    id: 'cloudbreak',
+    name: 'Cloudbreak (Tavarua)',
+    region: 'world',
+    lat: -17.8783, lon: 177.1862,
+    optimalSwellDir: 200, swellTolerance: 50,
+    coastFacing: 200,
+    type: 'Left Reef',
+    skill: 'Advanced',
+    bestSeason: 'Apr – Oct',
+    note: 'World-class heavy left breaking 1km offshore from a Fijian island.'
+  },
+  {
+    id: 'jbay',
+    name: 'Jeffreys Bay (J-Bay)',
+    region: 'world',
+    lat: -34.0507, lon: 24.9281,
+    optimalSwellDir: 225, swellTolerance: 55,
+    coastFacing: 135,
+    type: 'Right Point',
+    skill: 'Advanced',
+    bestSeason: 'May – Sep',
+    note: 'One of the best rights on earth. Six sections, 1km+ on a good day.'
+  },
+  {
+    id: 'mundaka',
+    name: 'Mundaka',
+    region: 'world',
+    lat: 43.4131, lon: -2.6997,
+    optimalSwellDir: 315, swellTolerance: 50,
+    coastFacing: 350,
+    type: 'Rivermouth Sandbar',
+    skill: 'Advanced',
+    bestSeason: 'Sep – Apr',
+    note: "Europe's most famous wave. Perfect long left when sandbars align."
+  },
+  {
+    id: 'mavericks',
+    name: 'Mavericks',
+    region: 'big-wave',
+    lat: 37.4945, lon: -122.5005,
+    optimalSwellDir: 315, swellTolerance: 50,
+    coastFacing: 270,
+    type: 'Big Wave Reef',
+    skill: 'Elite / Big Wave',
+    bestSeason: 'Nov – Mar',
+    note: 'Cold-water California giant. 25–60ft+ on the biggest North Pacific swells.'
+  },
+  {
+    id: 'jaws',
+    name: "Jaws (Pe'ahi)",
+    region: 'big-wave',
+    lat: 20.9456, lon: -156.2872,
+    optimalSwellDir: 340, swellTolerance: 40,
+    coastFacing: 350,
+    type: 'Big Wave Reef',
+    skill: 'Elite / Big Wave',
+    bestSeason: 'Nov – Mar',
+    note: "Maui's massive deep-water reef wave. Tow-in or paddle when 30–80ft+."
+  },
+  {
+    id: 'teahupoo',
+    name: "Teahupo'o",
+    region: 'big-wave',
+    lat: -17.8478, lon: -149.2664,
+    optimalSwellDir: 200, swellTolerance: 50,
+    coastFacing: 180,
+    type: 'Heavy Reef Slab',
+    skill: 'Elite / Big Wave',
+    bestSeason: 'Apr – Oct',
+    note: "World's most feared wave. Heavy thick lefts breaking onto razor-shallow reef."
   }
 ];
 
@@ -940,14 +1122,7 @@ const CONDITION_RGB = {
   good: '39,174,96', 'very-good': '36,113,163', epic: '155,89,182'
 };
 
-const REGION_VIEWS = {
-  'all':             { center: [10, -85],   zoom: 6  },
-  'pacific-north':   { center: [10.6, -85.9], zoom: 10 },
-  'pacific-central': { center: [9.65, -85.2], zoom: 9  },
-  'pacific-south':   { center: [8.8,  -83.5], zoom: 9  },
-  'caribbean':       { center: [9.65, -82.7], zoom: 11 },
-  'big-wave':        { bounds: [[20, -162], [41, -7]]   }
-};
+// Region view is computed dynamically from the spots in that region (see setMapView).
 
 function initMap() {
   if (map) return;
@@ -992,11 +1167,13 @@ function initMap() {
 
 function setMapView(region) {
   if (!map) return;
-  const v = REGION_VIEWS[region] ?? REGION_VIEWS['all'];
-  if (v.bounds) {
-    map.fitBounds(v.bounds, { padding: [40, 40], animate: true });
+  const spots = region === 'all' ? SPOTS : SPOTS.filter(s => s.region === region);
+  if (spots.length === 0) return;
+  if (spots.length === 1) {
+    map.setView([spots[0].lat, spots[0].lon], 11, { animate: true });
   } else {
-    map.setView(v.center, v.zoom, { animate: true });
+    const bounds = L.latLngBounds(spots.map(s => [s.lat, s.lon]));
+    map.fitBounds(bounds, { padding: [60, 60], animate: true, maxZoom: 10 });
   }
 }
 
@@ -1119,8 +1296,9 @@ async function loadAll() {
 
 document.getElementById('refresh-btn').addEventListener('click', loadAll);
 
-// Initialize map immediately so it's ready before user toggles to it
+// Initialize map immediately (default view) and fit all spots
 initMap();
+setMapView('all');
 
 loadAll();
 </script>
