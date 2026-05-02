@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Costa Rica Surf Report</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -305,6 +307,72 @@
     .sk-text   { height: 12px; margin: 5px 0; }
     .sk-text.w60 { width: 60%; }
 
+    /* ── View toggle ── */
+    .view-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      width: fit-content;
+      margin-bottom: 22px;
+    }
+    .view-btn {
+      padding: 8px 22px;
+      background: var(--surface);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.18s;
+    }
+    .view-btn:hover { color: var(--text); background: var(--surface2); }
+    .view-btn.active { background: var(--accent); color: #000; font-weight: 700; }
+    .view-btn + .view-btn { border-left: 1px solid var(--border); }
+
+    /* ── Map ── */
+    #map-container { display: none; margin-bottom: 24px; }
+    #map-container.visible { display: block; }
+    #map {
+      height: 520px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* ── Leaflet dark theme overrides ── */
+    .leaflet-container { background: #040810 !important; font-family: inherit; }
+    .leaflet-popup-content-wrapper {
+      background: #0d1829 !important;
+      color: #d4e8f5 !important;
+      border: 1px solid #1e3050 !important;
+      border-radius: 14px !important;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6) !important;
+      padding: 0 !important;
+    }
+    .leaflet-popup-content { margin: 0 !important; }
+    .leaflet-popup-tip { background: #0d1829 !important; }
+    .leaflet-popup-close-button {
+      color: #6b8fa3 !important;
+      font-size: 18px !important;
+      padding: 6px 8px !important;
+      top: 4px !important;
+      right: 4px !important;
+    }
+    .leaflet-popup-close-button:hover { color: #d4e8f5 !important; }
+    .leaflet-control-zoom a {
+      background: #0d1829 !important;
+      color: #d4e8f5 !important;
+      border-color: #1e3050 !important;
+    }
+    .leaflet-control-zoom a:hover { background: #162540 !important; }
+    .leaflet-control-attribution {
+      background: rgba(7,13,26,0.85) !important;
+      color: #4a6880 !important;
+      font-size: 10px !important;
+    }
+    .leaflet-control-attribution a { color: #4a6880 !important; }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       header { padding: 14px 18px; }
@@ -347,6 +415,15 @@
     <div class="tab" data-region="pacific-south">Pacific South</div>
     <div class="tab" data-region="caribbean">Caribbean</div>
     <div class="tab" data-region="big-wave">🌊 Big Wave Refs</div>
+  </div>
+
+  <div class="view-toggle">
+    <button class="view-btn active" id="btn-cards">⊞ Cards</button>
+    <button class="view-btn" id="btn-map">🗺 Map</button>
+  </div>
+
+  <div id="map-container">
+    <div id="map"></div>
   </div>
   <div class="spots-grid" id="spots-grid"></div>
 </main>
@@ -823,6 +900,148 @@ function errorCardHTML(spot) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MAP
+// ─────────────────────────────────────────────────────────────────────────────
+
+let map = null;
+const leafletMarkers = {};
+
+const CONDITION_COLORS = {
+  flat:        '#4a5568',
+  poor:        '#c0392b',
+  fair:        '#d68910',
+  good:        '#27ae60',
+  'very-good': '#2471a3',
+  epic:        '#9b59b6'
+};
+
+const CONDITION_RGB = {
+  flat: '74,85,104', poor: '192,57,43', fair: '214,137,16',
+  good: '39,174,96', 'very-good': '36,113,163', epic: '155,89,182'
+};
+
+const REGION_VIEWS = {
+  'all':             { center: [10, -85],   zoom: 6  },
+  'pacific-north':   { center: [10.6, -85.9], zoom: 10 },
+  'pacific-central': { center: [9.65, -85.2], zoom: 9  },
+  'pacific-south':   { center: [8.8,  -83.5], zoom: 9  },
+  'caribbean':       { center: [9.65, -82.7], zoom: 11 },
+  'big-wave':        { bounds: [[20, -162], [41, -7]]   }
+};
+
+function initMap() {
+  if (map) return;
+  map = L.map('map', { zoomControl: true });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors © <a href="https://carto.com">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  SPOTS.forEach(spot => {
+    const marker = L.circleMarker([spot.lat, spot.lon], {
+      radius: 11,
+      fillColor: '#2d3748',
+      color: '#4a5568',
+      weight: 2,
+      opacity: 1,
+      fillOpacity: 0.9
+    }).addTo(map);
+
+    marker.bindPopup(buildLoadingPopup(spot), { maxWidth: 260 });
+    leafletMarkers[spot.id] = marker;
+  });
+
+  setMapView('all');
+}
+
+function setMapView(region) {
+  if (!map) return;
+  const v = REGION_VIEWS[region] ?? REGION_VIEWS['all'];
+  if (v.bounds) {
+    map.fitBounds(v.bounds, { padding: [40, 40], animate: true });
+  } else {
+    map.setView(v.center, v.zoom, { animate: true });
+  }
+}
+
+function buildLoadingPopup(spot) {
+  return `<div style="padding:14px 16px;min-width:190px">
+    <div style="font-size:14px;font-weight:700;color:#d4e8f5;margin-bottom:4px">${spot.name}</div>
+    <div style="font-size:11px;color:#4a6880">${spot.type} · ${spot.region.replace('-', ' ')}</div>
+    <div style="font-size:11px;color:#4a6880;margin-top:6px">Loading conditions…</div>
+  </div>`;
+}
+
+function updateMarker(spot, rating, waveH, wavePer, windInfo) {
+  const marker = leafletMarkers[spot.id];
+  if (!marker) return;
+
+  const color = CONDITION_COLORS[rating.cls] ?? '#4a5568';
+  const rgb   = CONDITION_RGB[rating.cls]   ?? '74,85,104';
+
+  marker.setStyle({
+    fillColor: color,
+    color: rating.cls === 'epic' ? '#c39bd3' : color,
+    weight: rating.cls === 'epic' ? 3 : 2,
+    fillOpacity: 0.9
+  });
+
+  const windCol = windInfo.score >= 4 ? '#27ae60' : windInfo.score >= 3 ? '#d68910' : '#c0392b';
+  const windLabel = windInfo.type.replace('-', ' ');
+
+  marker.bindPopup(`
+    <div style="padding:14px 16px;min-width:220px">
+      <div style="font-size:15px;font-weight:700;color:#d4e8f5;margin-bottom:8px">${spot.name}</div>
+      <div style="display:inline-block;font-size:10px;font-weight:800;padding:3px 11px;
+                  border-radius:12px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;
+                  background:rgba(${rgb},0.18);color:${color};border:1px solid ${color}">
+        ${rating.label}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
+          <div style="font-size:17px;font-weight:700;color:#d4e8f5;line-height:1">${mToFt(waveH)}<span style="font-size:10px;font-weight:400">ft</span></div>
+          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">Wave</div>
+        </div>
+        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
+          <div style="font-size:17px;font-weight:700;color:#d4e8f5;line-height:1">${Math.round(wavePer)}<span style="font-size:10px;font-weight:400">s</span></div>
+          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">Period</div>
+        </div>
+        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
+          <div style="font-size:17px;font-weight:700;line-height:1;color:${windCol}">${Math.round(windInfo.kts)}<span style="font-size:10px;font-weight:400">kt</span></div>
+          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">${windLabel}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#6b8fa3;border-top:1px solid #1e3050;padding-top:8px">
+        ${spot.type} · ${spot.skill}
+      </div>
+    </div>
+  `, { maxWidth: 280 });
+}
+
+// ── View toggle ───────────────────────────────────────────────────────────────
+document.getElementById('btn-map').addEventListener('click', () => {
+  document.getElementById('btn-map').classList.add('active');
+  document.getElementById('btn-cards').classList.remove('active');
+  document.getElementById('map-container').classList.add('visible');
+  document.getElementById('spots-grid').style.display = 'none';
+  if (!map) {
+    initMap();
+  } else {
+    setTimeout(() => map.invalidateSize(), 50);
+    setMapView(activeRegion);
+  }
+});
+
+document.getElementById('btn-cards').addEventListener('click', () => {
+  document.getElementById('btn-cards').classList.add('active');
+  document.getElementById('btn-map').classList.remove('active');
+  document.getElementById('map-container').classList.remove('visible');
+  document.getElementById('spots-grid').style.display = '';
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FILTER
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -842,6 +1061,7 @@ document.getElementById('region-tabs').addEventListener('click', e => {
   tab.classList.add('active');
   activeRegion = tab.dataset.region;
   applyFilter();
+  setMapView(activeRegion);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -860,11 +1080,29 @@ async function loadAll() {
     const placeholder = grid.querySelector(`[data-id="${spot.id}"]`);
     try {
       const data = await fetchSpot(spot);
+
+      // Compute scores once for both card and map marker
+      const cur      = data.m.current;
+      const wcur     = data.w.current;
+      const waveH    = cur.wave_height          ?? 0;
+      const wavePer  = cur.wave_period          ?? 0;
+      const swellH   = cur.swell_wave_height    ?? waveH;
+      const swellDir = cur.swell_wave_direction ?? (cur.wave_direction ?? 0);
+      const windDeg  = wcur.wind_direction_10m  ?? 0;
+      const windKts  = wcur.wind_speed_10m      ?? 0;
+      const hScore   = scoreWaveHeight(waveH);
+      const pScore   = scoreSwellPeriod(wavePer);
+      const dScore   = scoreSwellDirection(swellDir, spot);
+      const windInfo = analyzeWind(windDeg, windKts, spot);
+      const rating   = computeRating(hScore, pScore, dScore, windInfo.score);
+
       const tmp = document.createElement('div');
       tmp.innerHTML = dataCardHTML(spot, data);
       const built = tmp.firstElementChild;
       if (activeRegion !== 'all' && spot.region !== activeRegion) built.style.display = 'none';
       placeholder.replaceWith(built);
+
+      updateMarker(spot, rating, waveH, wavePer, windInfo);
     } catch (err) {
       const tmp = document.createElement('div');
       tmp.innerHTML = errorCardHTML(spot);
