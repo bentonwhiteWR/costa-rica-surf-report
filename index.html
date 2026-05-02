@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Costa Rica Surf Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #070d1a;
+      --surface:     #0d1829;
+      --surface2:    #111f33;
+      --surface3:    #162540;
+      --border:      #1e3050;
+      --text:        #d4e8f5;
+      --text-muted:  #6b8fa3;
+      --text-dim:    #4a6880;
+      --accent:      #00c9ff;
+      --accent2:     #0095cc;
+
+      --flat:        #4a5568;
+      --poor:        #c0392b;
+      --fair:        #d68910;
+      --good:        #27ae60;
+      --very-good:   #2471a3;
+      --epic:        #7d3c98;
+
+      --flat-bg:      rgba(74,85,104,0.15);
+      --poor-bg:      rgba(192,57,43,0.15);
+      --fair-bg:      rgba(214,137,16,0.15);
+      --good-bg:      rgba(39,174,96,0.15);
+      --very-good-bg: rgba(36,113,163,0.15);
+      --epic-bg:      rgba(125,60,152,0.15);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Ocean bar ── */
+    .ocean-bar {
+      height: 3px;
+      background: linear-gradient(90deg, #003380, #00c9ff, #0095cc, #003380);
+      background-size: 300% 100%;
+      animation: ocean-slide 5s linear infinite;
+    }
+    @keyframes ocean-slide {
+      0%   { background-position: 0% 0; }
+      100% { background-position: 300% 0; }
+    }
+
+    /* ── Header ── */
+    header {
+      background: rgba(7,13,26,0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .header-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { font-size: 26px; }
+    .logo h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo .tagline { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .header-right { text-align: right; }
+    .update-label { font-size: 11px; color: var(--text-dim); }
+    .update-time  { font-size: 12px; color: var(--accent); font-weight: 600; }
+
+    .refresh-btn {
+      margin-top: 4px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--accent2); color: var(--accent); }
+
+    /* ── Main ── */
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px 32px 48px;
+    }
+
+    /* ── Region tabs ── */
+    .region-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.18s;
+      user-select: none;
+    }
+    .tab:hover { border-color: var(--accent2); color: var(--text); }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* ── Grid ── */
+    .spots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── Card ── */
+    .spot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+    }
+    .spot-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent2);
+      box-shadow: 0 10px 36px rgba(0,150,200,0.12);
+    }
+
+    .card-header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .spot-name { font-size: 17px; font-weight: 700; }
+    .spot-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-type  { background: var(--surface3); color: var(--text-muted); border: 1px solid var(--border); }
+    .badge-skill { background: rgba(0,201,255,0.08); color: var(--accent); border: 1px solid rgba(0,201,255,0.2); }
+
+    /* Condition badge */
+    .condition-badge {
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 13px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      flex-shrink: 0;
+    }
+    .condition-flat      { background: var(--flat-bg);      color: var(--flat);      border: 1px solid var(--flat); }
+    .condition-poor      { background: var(--poor-bg);      color: var(--poor);      border: 1px solid var(--poor); }
+    .condition-fair      { background: var(--fair-bg);      color: var(--fair);      border: 1px solid var(--fair); }
+    .condition-good      { background: var(--good-bg);      color: var(--good);      border: 1px solid var(--good); }
+    .condition-very-good { background: var(--very-good-bg); color: var(--very-good); border: 1px solid var(--very-good); }
+    .condition-epic      {
+      background: var(--epic-bg);
+      color: #b44bde;
+      border: 1px solid var(--epic);
+      box-shadow: 0 0 14px rgba(125,60,152,0.35);
+    }
+    .condition-loading {
+      background: var(--surface2);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    /* ── Metrics row ── */
+    .card-metrics {
+      padding: 16px 20px 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .metric { text-align: center; }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .metric-unit { font-size: 11px; font-weight: 400; }
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 3px;
+    }
+    .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .wind-good { color: var(--good); }
+    .wind-fair { color: var(--fair); }
+    .wind-poor { color: var(--poor); }
+
+    /* ── Summary ── */
+    .card-summary {
+      padding: 4px 20px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* ── Analysis chip row ── */
+    .card-chips {
+      padding: 0 20px 14px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 10px;
+      border: 1px solid;
+    }
+    .chip-good     { color: var(--good);      border-color: var(--good);      background: var(--good-bg); }
+    .chip-fair     { color: var(--fair);      border-color: var(--fair);      background: var(--fair-bg); }
+    .chip-poor     { color: var(--poor);      border-color: var(--poor);      background: var(--poor-bg); }
+    .chip-neutral  { color: var(--text-muted); border-color: var(--border);  background: var(--surface2); }
+
+    hr.card-sep { border: none; border-top: 1px solid var(--border); }
+
+    /* ── Forecast ── */
+    .card-forecast { padding: 14px 20px 16px; }
+    .forecast-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .forecast-days { display: flex; gap: 4px; }
+    .forecast-day  { flex: 1; text-align: center; }
+    .fday-label    { font-size: 9px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+    .fday-bar-wrap {
+      height: 44px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .fday-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; }
+    .fday-ht  { font-size: 9px; color: var(--text-muted); margin-top: 3px; }
+
+    /* ── Season note ── */
+    .card-note {
+      padding: 0 20px 16px;
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── Error ── */
+    .card-error {
+      padding: 16px 20px;
+      font-size: 12px;
+      color: var(--poor);
+    }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+    .sk-metric { height: 22px; margin: 2px auto; width: 70%; }
+    .sk-text   { height: 12px; margin: 5px 0; }
+    .sk-text.w60 { width: 60%; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      header { padding: 14px 18px; }
+      main   { padding: 20px 18px 40px; }
+      .spots-grid { grid-template-columns: 1fr; }
+      .card-metrics { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    }
+    @media (max-width: 480px) {
+      .logo h1 { font-size: 17px; }
+      .forecast-days { gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ocean-bar"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">🏄</span>
+      <div>
+        <h1>Costa Rica Surf Report</h1>
+        <div class="tagline">Live conditions · Custom swell analysis · Open-Meteo data</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="update-label">Last updated (CST)</div>
+      <div class="update-time" id="update-time">—</div>
+      <button class="refresh-btn" id="refresh-btn">↻ Refresh</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="region-tabs" id="region-tabs">
+    <div class="tab active" data-region="all">All Spots</div>
+    <div class="tab" data-region="pacific-north">Pacific North</div>
+    <div class="tab" data-region="pacific-central">Pacific Central</div>
+    <div class="tab" data-region="pacific-south">Pacific South</div>
+    <div class="tab" data-region="caribbean">Caribbean</div>
+  </div>
+  <div class="spots-grid" id="spots-grid"></div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// SPOT DATA
+// optimalSwellDir = compass degrees the ideal swell comes FROM
+// swellTolerance  = degrees either side still rideable
+// coastFacing     = compass direction the beach faces (toward open ocean)
+//                   offshore wind = wind FROM (coastFacing + 180)
+// ─────────────────────────────────────────────────────────────────────────────
+const SPOTS = [
+  {
+    id: 'tamarindo',
+    name: 'Tamarindo',
+    region: 'pacific-north',
+    lat: 10.2997, lon: -85.8419,
+    optimalSwellDir: 315, swellTolerance: 70,
+    coastFacing: 270,
+    type: 'Beach Break',
+    skill: 'Beginner – Intermediate',
+    bestSeason: 'Nov – Apr',
+    note: 'Consistent and mellow. Great for learning. Gets crowded.'
+  },
+  {
+    id: 'witches-rock',
+    name: "Witch's Rock",
+    region: 'pacific-north',
+    lat: 10.9167, lon: -85.9167,
+    optimalSwellDir: 315, swellTolerance: 60,
+    coastFacing: 270,
+    type: 'Beach Break',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'Nov – Apr',
+    note: 'Remote hollow barrels inside Santa Rosa NP. Boat access only.'
+  },
+  {
+    id: 'nosara',
+    name: 'Nosara (Guiones)',
+    region: 'pacific-central',
+    lat: 9.9742, lon: -85.6625,
+    optimalSwellDir: 300, swellTolerance: 70,
+    coastFacing: 270,
+    type: 'Beach Break',
+    skill: 'All Levels',
+    bestSeason: 'Year-round',
+    note: 'Long, well-shaped waves ideal for progression. Eco-friendly town.'
+  },
+  {
+    id: 'jaco',
+    name: 'Jacó',
+    region: 'pacific-central',
+    lat: 9.6138, lon: -84.6279,
+    optimalSwellDir: 270, swellTolerance: 65,
+    coastFacing: 260,
+    type: 'Beach Break',
+    skill: 'Beginner – Intermediate',
+    bestSeason: 'May – Oct',
+    note: 'Most accessible surf town from San José. Best sessions before 9am.'
+  },
+  {
+    id: 'santa-teresa',
+    name: 'Santa Teresa',
+    region: 'pacific-central',
+    lat: 9.6397, lon: -85.1671,
+    optimalSwellDir: 265, swellTolerance: 60,
+    coastFacing: 255,
+    type: 'Beach Break',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'May – Nov',
+    note: 'Powerful and punchy with multiple peaks up and down the beach.'
+  },
+  {
+    id: 'mal-pais',
+    name: 'Mal País',
+    region: 'pacific-central',
+    lat: 9.6247, lon: -85.1889,
+    optimalSwellDir: 265, swellTolerance: 65,
+    coastFacing: 255,
+    type: 'Reef / Rock Break',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'Year-round',
+    note: 'Rocky reef peaks. Fast and hollow on the right swell.'
+  },
+  {
+    id: 'dominical',
+    name: 'Dominical',
+    region: 'pacific-south',
+    lat: 9.2507, lon: -83.8592,
+    optimalSwellDir: 225, swellTolerance: 65,
+    coastFacing: 230,
+    type: 'Beach Break',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'May – Oct',
+    note: 'Powerful shore break. S/SW swells stack up nicely here.'
+  },
+  {
+    id: 'pavones',
+    name: 'Pavones',
+    region: 'pacific-south',
+    lat: 8.3833, lon: -83.1500,
+    optimalSwellDir: 200, swellTolerance: 50,
+    coastFacing: 215,
+    type: 'Point Break (Left)',
+    skill: 'Intermediate – Advanced',
+    bestSeason: 'May – Oct',
+    note: "One of the world's longest lefts. Needs a solid S/SW swell to fire."
+  },
+  {
+    id: 'salsa-brava',
+    name: 'Salsa Brava',
+    region: 'caribbean',
+    lat: 9.6573, lon: -82.7392,
+    optimalSwellDir: 45, swellTolerance: 50,
+    coastFacing: 55,
+    type: 'Reef Break',
+    skill: 'Advanced',
+    bestSeason: 'Dec – Feb',
+    note: "CR's most notorious wave. Shallow reef and heavy barrel. Experts only."
+  }
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCORING ENGINE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function angleDiff(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+// Score 0-5 based on how close swell direction is to spot's optimal window
+function scoreSwellDirection(swellDeg, spot) {
+  const diff = angleDiff(swellDeg, spot.optimalSwellDir);
+  const t = spot.swellTolerance;
+  if (diff <= t * 0.3)  return 5;
+  if (diff <= t * 0.6)  return 4;
+  if (diff <= t)        return 3;
+  if (diff <= t * 1.35) return 1;
+  return 0;
+}
+
+// Score 0-5 based on wave height (meters → feet)
+function scoreWaveHeight(hM) {
+  const ft = hM * 3.28084;
+  if (ft < 0.7)  return 0;  // flat
+  if (ft < 1.5)  return 1;  // ankle–knee
+  if (ft < 2.5)  return 2;  // knee–waist
+  if (ft < 3.5)  return 3;  // waist–chest
+  if (ft < 5.5)  return 4;  // chest–overhead
+  if (ft < 8.5)  return 5;  // well overhead
+  return 3;                  // too big (4m+) — penalty
+}
+
+// Score 0-5 based on swell period (seconds)
+function scoreSwellPeriod(s) {
+  if (s < 5)   return 0;
+  if (s < 8)   return 1;
+  if (s < 10)  return 2;
+  if (s < 12)  return 3;
+  if (s < 15)  return 4;
+  return 5;
+}
+
+// Analyze wind: offshore/onshore relative to each spot's coastline
+function analyzeWind(windDeg, windKts, spot) {
+  // Offshore = wind coming from land, i.e. FROM the direction OPPOSITE the coast face
+  const offshoreFrom = (spot.coastFacing + 180) % 360;
+  const diff = angleDiff(windDeg, offshoreFrom);
+
+  let type;
+  if (diff < 40)       type = 'offshore';
+  else if (diff < 90)  type = 'side-offshore';
+  else if (diff < 135) type = 'side-onshore';
+  else                 type = 'onshore';
+
+  let score;
+  if (type === 'offshore') {
+    score = windKts < 5 ? 5 : windKts < 12 ? 5 : windKts < 20 ? 4 : windKts < 26 ? 3 : 2;
+  } else if (type === 'side-offshore') {
+    score = windKts < 8 ? 4 : windKts < 15 ? 3 : windKts < 22 ? 2 : 1;
+  } else if (type === 'side-onshore') {
+    score = windKts < 6 ? 3 : windKts < 12 ? 2 : 1;
+  } else {
+    score = windKts < 4 ? 2 : windKts < 8 ? 1 : 0;
+  }
+
+  return { score, type, kts: windKts, deg: windDeg };
+}
+
+// Weighted overall rating
+function computeRating(hScore, pScore, dScore, wScore) {
+  if (hScore === 0) return { label: 'Flat', cls: 'flat' };
+  const w = hScore * 0.30 + pScore * 0.25 + dScore * 0.25 + wScore * 0.20;
+  if (w < 1.3)  return { label: 'Poor',      cls: 'poor' };
+  if (w < 2.4)  return { label: 'Fair',      cls: 'fair' };
+  if (w < 3.5)  return { label: 'Good',      cls: 'good' };
+  if (w < 4.4)  return { label: 'Very Good', cls: 'very-good' };
+  return               { label: 'Epic',      cls: 'epic' };
+}
+
+// Color/label for forecast bars based on max daily height
+function forecastRating(hM) {
+  const ft = hM * 3.28084;
+  if (ft < 0.7) return { color: 'var(--flat)', label: 'Flat' };
+  if (ft < 2.0) return { color: 'var(--fair)', label: 'Small' };
+  if (ft < 4.0) return { color: 'var(--good)', label: 'Good' };
+  if (ft < 7.0) return { color: 'var(--very-good)', label: 'Solid' };
+  return              { color: 'var(--epic)', label: 'Large' };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function dirLabel(deg) {
+  const d = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return d[Math.round(deg / 22.5) % 16];
+}
+
+function mToFt(m) { return (m * 3.28084).toFixed(1); }
+
+function windClass(type) {
+  if (type === 'offshore' || type === 'side-offshore') return 'wind-good';
+  if (type === 'side-onshore') return 'wind-fair';
+  return 'wind-poor';
+}
+
+function buildExplanation(hScore, pScore, dScore, windInfo, waveH, wavePeriod, swellDir, spot) {
+  if (hScore === 0) return 'No surfable waves right now.';
+
+  const parts = [];
+  parts.push(`${mToFt(waveH)}ft @ ${Math.round(wavePeriod)}s`);
+
+  if (pScore >= 4)      parts.push('quality long-period swell');
+  else if (pScore <= 1) parts.push('short choppy period');
+
+  if (dScore >= 4)      parts.push(`${dirLabel(swellDir)} swell ideal for this spot`);
+  else if (dScore <= 1) parts.push(`${dirLabel(swellDir)} swell direction not ideal`);
+
+  const windDesc = windInfo.type.replace('-', ' ');
+  if (windInfo.type === 'offshore')       parts.push(`${Math.round(windInfo.kts)}kt offshore — clean faces`);
+  else if (windInfo.type === 'side-offshore') parts.push(`${Math.round(windInfo.kts)}kt side-offshore — mostly clean`);
+  else if (windInfo.type === 'onshore')   parts.push(`${Math.round(windInfo.kts)}kt onshore — expect chop`);
+  else                                    parts.push(`${Math.round(windInfo.kts)}kt ${windDesc}`);
+
+  return parts.join(' · ');
+}
+
+function buildChips(hScore, pScore, dScore, windInfo, waveH) {
+  const chips = [];
+  const ft = parseFloat(mToFt(waveH));
+
+  // Height chip
+  if (hScore === 0) {
+    chips.push({ label: 'Flat', cls: 'chip-poor' });
+  } else if (ft > 7) {
+    chips.push({ label: `${ft}ft — Large`, cls: 'chip-fair' });
+  } else {
+    chips.push({ label: `${ft}ft`, cls: hScore >= 4 ? 'chip-good' : hScore >= 2 ? 'chip-fair' : 'chip-poor' });
+  }
+
+  // Period chip
+  const periodLabels = ['','Short','Short','Fair period','Good period','Long period','Long period'];
+  if (pScore > 0) {
+    chips.push({ label: periodLabels[pScore], cls: pScore >= 4 ? 'chip-good' : pScore >= 3 ? 'chip-fair' : 'chip-poor' });
+  }
+
+  // Swell dir chip
+  if (dScore >= 4)      chips.push({ label: 'Swell direction ideal', cls: 'chip-good' });
+  else if (dScore === 3) chips.push({ label: 'Swell direction OK', cls: 'chip-fair' });
+  else if (dScore <= 1)  chips.push({ label: 'Swell direction off', cls: 'chip-poor' });
+
+  // Wind chip
+  const wLabel = windInfo.type === 'offshore' ? 'Offshore wind' :
+                 windInfo.type === 'side-offshore' ? 'Side-offshore' :
+                 windInfo.type === 'side-onshore'  ? 'Side-onshore' : 'Onshore wind';
+  const wCls   = windInfo.score >= 4 ? 'chip-good' : windInfo.score >= 3 ? 'chip-fair' : 'chip-poor';
+  chips.push({ label: wLabel, cls: wCls });
+
+  return chips.map(c => `<span class="chip ${c.cls}">${c.label}</span>`).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchSpot(spot) {
+  const tz = 'America%2FCosta_Rica';
+  const marineURL =
+    `https://marine-api.open-meteo.com/v1/marine` +
+    `?latitude=${spot.lat}&longitude=${spot.lon}` +
+    `&current=wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period` +
+    `&daily=wave_height_max,swell_wave_height_max,wave_period_max,swell_wave_direction_dominant` +
+    `&timezone=${tz}&forecast_days=7`;
+
+  const weatherURL =
+    `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${spot.lat}&longitude=${spot.lon}` +
+    `&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m` +
+    `&daily=wind_speed_10m_max,wind_direction_10m_dominant` +
+    `&timezone=${tz}&wind_speed_unit=kn&forecast_days=7`;
+
+  const [m, w] = await Promise.all([
+    fetch(marineURL).then(r => { if (!r.ok) throw new Error('Marine API error'); return r.json(); }),
+    fetch(weatherURL).then(r => { if (!r.ok) throw new Error('Weather API error'); return r.json(); })
+  ]);
+  return { m, w };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CARD BUILDERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function loadingCardHTML(spot) {
+  return `
+    <div class="spot-card" data-id="${spot.id}" data-region="${spot.region}">
+      <div class="card-header">
+        <div>
+          <div class="spot-name">${spot.name}</div>
+          <div class="spot-meta">
+            <span class="badge badge-type">${spot.type}</span>
+            <span class="badge badge-skill">${spot.skill}</span>
+          </div>
+        </div>
+        <span class="condition-badge condition-loading">Loading</span>
+      </div>
+      <div class="card-metrics">
+        ${['WAVE','PERIOD','SWELL DIR','WIND'].map(l => `
+          <div class="metric">
+            <div class="skeleton sk-metric"></div>
+            <div class="metric-label">${l}</div>
+          </div>`).join('')}
+      </div>
+      <div class="card-summary">
+        <div class="skeleton sk-text"></div>
+        <div class="skeleton sk-text w60" style="margin-top:6px"></div>
+      </div>
+    </div>`;
+}
+
+function dataCardHTML(spot, data) {
+  const cur  = data.m.current;
+  const wcur = data.w.current;
+
+  const waveH    = cur.wave_height          ?? 0;
+  const wavePer  = cur.wave_period          ?? 0;
+  const swellH   = cur.swell_wave_height    ?? waveH;
+  const swellDir = cur.swell_wave_direction ?? (cur.wave_direction ?? 0);
+  const windDeg  = wcur.wind_direction_10m  ?? 0;
+  const windKts  = wcur.wind_speed_10m      ?? 0;
+  const gustKts  = wcur.wind_gusts_10m      ?? 0;
+
+  const hScore   = scoreWaveHeight(waveH);
+  const pScore   = scoreSwellPeriod(wavePer);
+  const dScore   = scoreSwellDirection(swellDir, spot);
+  const windInfo = analyzeWind(windDeg, windKts, spot);
+  const rating   = computeRating(hScore, pScore, dScore, windInfo.score);
+
+  const swellFt  = mToFt(swellH);
+  const windCls  = windClass(windInfo.type);
+  const windLabel = windInfo.type.replace('-', ' ');
+
+  const explanation = buildExplanation(hScore, pScore, dScore, windInfo, waveH, wavePer, swellDir, spot);
+  const chips       = buildChips(hScore, pScore, dScore, windInfo, waveH);
+
+  // 7-day forecast bars
+  const days     = data.m.daily?.time            ?? [];
+  const maxWaves = data.m.daily?.wave_height_max ?? [];
+  const forecastHTML = days.slice(0, 7).map((d, i) => {
+    const dt    = new Date(d + 'T12:00:00');
+    const label = i === 0 ? 'Today' : dt.toLocaleDateString('en-US', { weekday: 'short' });
+    const hMax  = maxWaves[i] ?? 0;
+    const r     = forecastRating(hMax);
+    const pct   = Math.min(hMax / 2.8, 1); // 2.8m (~9ft) = full bar
+    return `
+      <div class="forecast-day">
+        <div class="fday-label">${label}</div>
+        <div class="fday-bar-wrap">
+          <div class="fday-bar" style="height:${Math.max(pct * 44, 3)}px; background:${r.color};"></div>
+        </div>
+        <div class="fday-ht">${mToFt(hMax)}ft</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="spot-card" data-id="${spot.id}" data-region="${spot.region}">
+      <div class="card-header">
+        <div>
+          <div class="spot-name">${spot.name}</div>
+          <div class="spot-meta">
+            <span class="badge badge-type">${spot.type}</span>
+            <span class="badge badge-skill">${spot.skill}</span>
+          </div>
+        </div>
+        <span class="condition-badge condition-${rating.cls}">${rating.label}</span>
+      </div>
+
+      <div class="card-metrics">
+        <div class="metric">
+          <div class="metric-value">${mToFt(waveH)}<span class="metric-unit">ft</span></div>
+          <div class="metric-label">Wave</div>
+          <div class="metric-sub">${swellFt}ft swell</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">${Math.round(wavePer)}<span class="metric-unit">s</span></div>
+          <div class="metric-label">Period</div>
+          <div class="metric-sub">${pScore >= 4 ? 'Quality' : pScore >= 3 ? 'Good' : pScore >= 2 ? 'Fair' : 'Short'}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" style="font-size:15px;">${dirLabel(swellDir)}</div>
+          <div class="metric-label">Swell Dir</div>
+          <div class="metric-sub">${Math.round(swellDir)}°</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value ${windCls}" style="font-size:15px;">${Math.round(windKts)}<span class="metric-unit">kt</span></div>
+          <div class="metric-label">Wind</div>
+          <div class="metric-sub ${windCls}">${windLabel}</div>
+        </div>
+      </div>
+
+      <div class="card-chips">${chips}</div>
+
+      <div class="card-summary">${explanation}</div>
+
+      <hr class="card-sep">
+
+      <div class="card-forecast">
+        <div class="forecast-title">7-Day Wave Forecast</div>
+        <div class="forecast-days">${forecastHTML}</div>
+      </div>
+
+      <div class="card-note">Best season: ${spot.bestSeason} &nbsp;·&nbsp; ${spot.note}</div>
+    </div>`;
+}
+
+function errorCardHTML(spot) {
+  return `
+    <div class="spot-card" data-id="${spot.id}" data-region="${spot.region}">
+      <div class="card-header">
+        <div>
+          <div class="spot-name">${spot.name}</div>
+          <div class="spot-meta"><span class="badge badge-type">${spot.type}</span></div>
+        </div>
+        <span class="condition-badge condition-loading">—</span>
+      </div>
+      <div class="card-error">Could not load conditions. Check your internet connection and refresh.</div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FILTER
+// ─────────────────────────────────────────────────────────────────────────────
+
+let activeRegion = 'all';
+
+function applyFilter() {
+  document.querySelectorAll('.spot-card').forEach(card => {
+    card.style.display =
+      (activeRegion === 'all' || card.dataset.region === activeRegion) ? '' : 'none';
+  });
+}
+
+document.getElementById('region-tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activeRegion = tab.dataset.region;
+  applyFilter();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  const grid = document.getElementById('spots-grid');
+  grid.innerHTML = SPOTS.map(loadingCardHTML).join('');
+  applyFilter();
+
+  document.getElementById('update-time').textContent =
+    new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Costa_Rica' });
+
+  await Promise.all(SPOTS.map(async spot => {
+    const placeholder = grid.querySelector(`[data-id="${spot.id}"]`);
+    try {
+      const data = await fetchSpot(spot);
+      const tmp = document.createElement('div');
+      tmp.innerHTML = dataCardHTML(spot, data);
+      const built = tmp.firstElementChild;
+      if (activeRegion !== 'all' && spot.region !== activeRegion) built.style.display = 'none';
+      placeholder.replaceWith(built);
+    } catch (err) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = errorCardHTML(spot);
+      placeholder.replaceWith(tmp.firstElementChild);
+    }
+  }));
+}
+
+document.getElementById('refresh-btn').addEventListener('click', loadAll);
+
+loadAll();
+</script>
+</body>
+</html>
