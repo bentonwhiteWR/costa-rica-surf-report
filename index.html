@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Costa Rica Surf Report</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%2300c9ff'/><stop offset='100%25' stop-color='%230095cc'/></linearGradient></defs><g transform='rotate(35 32 32)'><ellipse cx='32' cy='32' rx='9' ry='27' fill='url(%23g)' stroke='%23003380' stroke-width='2.5'/><line x1='32' y1='8' x2='32' y2='56' stroke='white' stroke-width='1.5' opacity='0.4'/><ellipse cx='32' cy='15' rx='5' ry='3' fill='white' opacity='0.3'/></g></svg>"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -959,8 +960,6 @@ function initMap() {
       updateMarker(spot, cached.rating, cached.waveH, cached.wavePer, cached.windInfo);
     }
   });
-
-  setMapView(activeRegion);
 }
 
 function setMapView(region) {
@@ -1033,12 +1032,14 @@ document.getElementById('btn-map').addEventListener('click', () => {
   document.getElementById('btn-cards').classList.remove('active');
   document.getElementById('map-container').classList.add('visible');
   document.getElementById('spots-grid').style.display = 'none';
-  if (!map) {
-    initMap();
-  } else {
-    setTimeout(() => map.invalidateSize(), 50);
+
+  if (!map) initMap();
+
+  // Container just became visible — let the browser lay it out, then size + position the map
+  requestAnimationFrame(() => {
+    map.invalidateSize();
     setMapView(activeRegion);
-  }
+  });
 });
 
 document.getElementById('btn-cards').addEventListener('click', () => {
