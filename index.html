@@ -933,7 +933,15 @@ const REGION_VIEWS = {
 
 function initMap() {
   if (map) return;
-  map = L.map('map', { zoomControl: true });
+
+  const container = document.getElementById('map-container');
+  // Force the container into the layout temporarily so Leaflet can size correctly.
+  // position:absolute keeps it out of normal flow (no visual jitter on the page).
+  const originalCss = container.getAttribute('style') || '';
+  container.setAttribute('style',
+    'display:block !important;position:absolute;left:-99999px;top:0;width:100%;');
+
+  map = L.map('map', { zoomControl: true, preferCanvas: true });
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors © <a href="https://carto.com">CARTO</a>',
@@ -954,12 +962,14 @@ function initMap() {
     marker.bindPopup(buildLoadingPopup(spot), { maxWidth: 260 });
     leafletMarkers[spot.id] = marker;
 
-    // If data already loaded before map was opened, apply it now
     const cached = spotDataCache[spot.id];
     if (cached) {
       updateMarker(spot, cached.rating, cached.waveH, cached.wavePer, cached.windInfo);
     }
   });
+
+  // Restore container to its original (hidden) state — map is now properly initialized
+  container.setAttribute('style', originalCss);
 }
 
 function setMapView(region) {
@@ -1034,8 +1044,7 @@ document.getElementById('btn-map').addEventListener('click', () => {
   document.getElementById('spots-grid').style.display = 'none';
 
   if (!map) initMap();
-
-  // Container just became visible — let the browser lay it out, then size + position the map
+  // Container just became visible at its real position — recompute and reposition
   requestAnimationFrame(() => {
     map.invalidateSize();
     setMapView(activeRegion);
@@ -1121,6 +1130,9 @@ async function loadAll() {
 }
 
 document.getElementById('refresh-btn').addEventListener('click', loadAll);
+
+// Initialize map immediately so it's ready before user toggles to it
+initMap();
 
 loadAll();
 </script>
