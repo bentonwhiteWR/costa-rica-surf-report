@@ -374,6 +374,24 @@
     }
     .leaflet-control-attribution a { color: #4a6880 !important; }
 
+    /* ── Card inside map popup ── */
+    .leaflet-popup-content { margin: 0 !important; width: auto !important; }
+    .leaflet-popup-content .spot-card {
+      width: 330px;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 14px !important;
+      transform: none !important;
+      box-shadow: none !important;
+      cursor: default;
+    }
+    .leaflet-popup-content .spot-card:hover {
+      transform: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .leaflet-popup-content .spot-card .card-header { padding-right: 38px; }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       header { padding: 14px 18px; }
@@ -964,7 +982,7 @@ function initMap() {
 
     const cached = spotDataCache[spot.id];
     if (cached) {
-      updateMarker(spot, cached.rating, cached.waveH, cached.wavePer, cached.windInfo);
+      updateMarker(spot, cached.rating, cached.data);
     }
   });
 
@@ -990,13 +1008,11 @@ function buildLoadingPopup(spot) {
   </div>`;
 }
 
-function updateMarker(spot, rating, waveH, wavePer, windInfo) {
+function updateMarker(spot, rating, data) {
   const marker = leafletMarkers[spot.id];
   if (!marker) return;
 
   const color = CONDITION_COLORS[rating.cls] ?? '#4a5568';
-  const rgb   = CONDITION_RGB[rating.cls]   ?? '74,85,104';
-
   marker.setStyle({
     fillColor: color,
     color: rating.cls === 'epic' ? '#c39bd3' : color,
@@ -1004,36 +1020,8 @@ function updateMarker(spot, rating, waveH, wavePer, windInfo) {
     fillOpacity: 0.9
   });
 
-  const windCol = windInfo.score >= 4 ? '#27ae60' : windInfo.score >= 3 ? '#d68910' : '#c0392b';
-  const windLabel = windInfo.type.replace('-', ' ');
-
-  marker.bindPopup(`
-    <div style="padding:14px 16px;min-width:220px">
-      <div style="font-size:15px;font-weight:700;color:#d4e8f5;margin-bottom:8px">${spot.name}</div>
-      <div style="display:inline-block;font-size:10px;font-weight:800;padding:3px 11px;
-                  border-radius:12px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;
-                  background:rgba(${rgb},0.18);color:${color};border:1px solid ${color}">
-        ${rating.label}
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
-        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
-          <div style="font-size:17px;font-weight:700;color:#d4e8f5;line-height:1">${mToFt(waveH)}<span style="font-size:10px;font-weight:400">ft</span></div>
-          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">Wave</div>
-        </div>
-        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
-          <div style="font-size:17px;font-weight:700;color:#d4e8f5;line-height:1">${Math.round(wavePer)}<span style="font-size:10px;font-weight:400">s</span></div>
-          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">Period</div>
-        </div>
-        <div style="text-align:center;background:#111f33;border-radius:8px;padding:8px 4px">
-          <div style="font-size:17px;font-weight:700;line-height:1;color:${windCol}">${Math.round(windInfo.kts)}<span style="font-size:10px;font-weight:400">kt</span></div>
-          <div style="font-size:9px;color:#4a6880;text-transform:uppercase;margin-top:2px">${windLabel}</div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#6b8fa3;border-top:1px solid #1e3050;padding-top:8px">
-        ${spot.type} · ${spot.skill}
-      </div>
-    </div>
-  `, { maxWidth: 280 });
+  // Reuse the full card HTML so the popup shows the same info as the grid card
+  marker.bindPopup(dataCardHTML(spot, data), { maxWidth: 360, autoPanPadding: [40, 40] });
 }
 
 // ── View toggle ───────────────────────────────────────────────────────────────
@@ -1065,7 +1053,7 @@ document.getElementById('btn-cards').addEventListener('click', () => {
 let activeRegion = 'all';
 
 function applyFilter() {
-  document.querySelectorAll('.spot-card').forEach(card => {
+  document.querySelectorAll('#spots-grid .spot-card').forEach(card => {
     card.style.display =
       (activeRegion === 'all' || card.dataset.region === activeRegion) ? '' : 'none';
   });
@@ -1119,8 +1107,8 @@ async function loadAll() {
       if (activeRegion !== 'all' && spot.region !== activeRegion) built.style.display = 'none';
       placeholder.replaceWith(built);
 
-      spotDataCache[spot.id] = { rating, waveH, wavePer, windInfo };
-      updateMarker(spot, rating, waveH, wavePer, windInfo);
+      spotDataCache[spot.id] = { rating, data };
+      updateMarker(spot, rating, data);
     } catch (err) {
       const tmp = document.createElement('div');
       tmp.innerHTML = errorCardHTML(spot);
