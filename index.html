@@ -905,6 +905,7 @@ function errorCardHTML(spot) {
 
 let map = null;
 const leafletMarkers = {};
+const spotDataCache = {}; // {spotId: {rating, waveH, wavePer, windInfo}}
 
 const CONDITION_COLORS = {
   flat:        '#4a5568',
@@ -951,9 +952,15 @@ function initMap() {
 
     marker.bindPopup(buildLoadingPopup(spot), { maxWidth: 260 });
     leafletMarkers[spot.id] = marker;
+
+    // If data already loaded before map was opened, apply it now
+    const cached = spotDataCache[spot.id];
+    if (cached) {
+      updateMarker(spot, cached.rating, cached.waveH, cached.wavePer, cached.windInfo);
+    }
   });
 
-  setMapView('all');
+  setMapView(activeRegion);
 }
 
 function setMapView(region) {
@@ -1102,6 +1109,7 @@ async function loadAll() {
       if (activeRegion !== 'all' && spot.region !== activeRegion) built.style.display = 'none';
       placeholder.replaceWith(built);
 
+      spotDataCache[spot.id] = { rating, waveH, wavePer, windInfo };
       updateMarker(spot, rating, waveH, wavePer, windInfo);
     } catch (err) {
       const tmp = document.createElement('div');
